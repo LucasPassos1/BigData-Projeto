@@ -6,14 +6,14 @@ API_KEY = "f66ded36cf3e17a34a3e94f83b58712b"
 URL_ATUAL = "https://api.openweathermap.org/data/2.5/weather"
 URL_FORECAST = "https://api.openweathermap.org/data/2.5/forecast"
 
-# Pergunta a cidade
+# faz a pergunta pro usuário de qual cidade ele quer saber o clima
 nome_cidade = input("\nDigite o nome da cidade desejada: ").strip().title()
 
-# Conecta ao banco
+# conecta ao banco de dados
 conn = sqlite3.connect("clima_brasil.db")
 cursor = conn.cursor()
 
-# Cria a tabela se não existir
+# cria a tabela se não existir(caso dentro do pc não tenha o arquivo do banco de dados)
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS clima (
     cidade TEXT,
@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS clima (
 )
 """)
 
-# Apaga registros antigos apenas dessa cidade
+# apaga os antigos registros da cidade que o usuário falou
 cursor.execute("DELETE FROM clima WHERE cidade = ?", (nome_cidade,))
 
-# Clima atual
+# atribui o clima atual da cidade usando a api
 params_atual = {"q": nome_cidade, "appid": API_KEY, "units": "metric", "lang": "pt_br"}
 r_atual = requests.get(URL_ATUAL, params=params_atual)
 
@@ -45,7 +45,7 @@ else:
     conn.close()
     exit()
 
-# Previsão com mín/máx por dia
+# previsão da cidade (1 previsão por dia com min/max)
 params_forecast = {"q": nome_cidade, "appid": API_KEY, "units": "metric", "lang": "pt_br"}
 r_forecast = requests.get(URL_FORECAST, params=params_forecast)
 
@@ -84,14 +84,14 @@ else:
 
 conn.commit()
 
-# Mostrar clima atual
+# mostra o clima atual da cidade em que o usuário colocou
 print(f"\n 🌞 Clima atual em {nome_cidade}:")
 cursor.execute("SELECT descricao, temperatura FROM clima WHERE cidade = ? AND tipo = 'atual'", (nome_cidade,))
 row = cursor.fetchone()
 if row:
     print(f"{row[0].capitalize()}, {row[1]}°C")
 
-# Mostrar previsão
+# mostra a previsão do tempo para os próximos 5 dias com min/max
 print(f"\n 📅 Previsão para os próximos dias em {nome_cidade}:")
 cursor.execute("SELECT data, descricao FROM clima WHERE cidade = ? AND tipo = 'previsao' ORDER BY data", (nome_cidade,))
 previsoes = cursor.fetchall()
@@ -102,7 +102,7 @@ for data, desc in previsoes:
     print(f"{data}: {desc}")
 if "chuva forte" in desc.lower():
         alerta = True
-
+# mensagem de alerta de perigo em chuvas fortes
 if alerta:
     print(f"\n⚠️ ALERTA: Possibilidade de chuva forte em {nome_cidade}!")
     print("Em caso de emergência, procure abrigo e acione a Defesa Civil (telefone 199).")
